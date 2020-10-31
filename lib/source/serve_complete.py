@@ -93,31 +93,6 @@ def connectdb():
     print("连接成功！")
     return db
 
-def sign_in(db,account,password):
-    cursor = db.cursor()
-    sql = "SELECT Password FROM User WHERE Account=%s" 
-    try:
-        cursor.execute(sql,account)
-        pw = cursor.fetchone()[0]      
-        print(pw)
-        if(pw==password):             
-            return True
-        else:           
-            return False
-    except:
-        return False
-
-def get_UID(db,account):
-    cursor = db.cursor()
-    sql = "SELECT Id FROM User WHERE Account=%s" 
-    try:
-        cursor.execute(sql,account)
-        uid = cursor.fetchone()[0]      
-        print(uid)
-        return uid
-    except:
-        return -1
-
 def add_c(db,uid,nid):
     cursor = db.cursor()
     sql ="""INSERT INTO Collection  (Uid,Nid)
@@ -132,3 +107,63 @@ def add_c(db,uid,nid):
         print("failed to insert")
         db.rollback()
         return False
+
+def add_u(db,account,password):
+    cursor = db.cursor()
+    sql = 'SELECT MAX(Id) AS id FROM User'
+    cursor.execute(sql)
+    uid = cursor.fetchone()[0]+1
+    sql ="""INSERT INTO User  (Id,Account,Password)
+     VALUES(%s,%s,%s)"""
+    values =(uid,account,password)
+    try:
+        cursor.execute(sql,values)
+        db.commit()
+        return uid
+    except:
+        print("failed to insert")
+        db.rollback()
+        return -1
+
+def get_c(db,uid):
+    cursor = db.cursor()
+    sql="SELECT Nid FROM Collection WHERE Uid = %s"
+    try:
+        cursor.execute(sql,uid)
+        collection = []
+        c =cursor.fetchone()
+        i=0
+        while c!=None:
+            c=str(c)
+            collection.append (c[2])
+            c =cursor.fetchone()
+            i+=1     
+        mesg = str(i)
+        for d in collection:
+            mesg = mesg+','+str(d)
+        return mesg
+    except:
+        return -1
+
+def del_c(db,uid,nid):
+    cursor = db.cursor()
+    sql="DELETE FROM Collection WHERE Uid=%s AND Nid=%s"
+    try:
+        values=(uid,nid)
+        cursor.execute(sql,values)
+        db.commit()
+        return True
+    except:
+        db.rollback()
+        return False
+
+
+
+
+if __name__ == '__main__':
+    from sys import argv
+    
+    if len(argv) == 2:
+        run(port=int(argv[1]))
+    else:
+        run()
