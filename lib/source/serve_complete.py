@@ -93,6 +93,31 @@ def connectdb():
     print("连接成功！")
     return db
 
+def sign_in(db,account,password):
+    cursor = db.cursor()
+    sql = "SELECT Password FROM User WHERE Account=%s" 
+    try:
+        cursor.execute(sql,account)
+        pw = cursor.fetchone()[0]      
+        print(pw)
+        if(pw==password):             
+            return True
+        else:           
+            return False
+    except:
+        return False
+
+def get_UID(db,account):
+    cursor = db.cursor()
+    sql = "SELECT Id FROM User WHERE Account=%s" 
+    try:
+        cursor.execute(sql,account)
+        uid = cursor.fetchone()[0]      
+        print(uid)
+        return uid
+    except:
+        return -1
+
 def add_c(db,uid,nid):
     cursor = db.cursor()
     sql ="""INSERT INTO Collection  (Uid,Nid)
@@ -159,6 +184,18 @@ def del_c(db,uid,nid):
 
 
 
+
+def run(server_class=HTTPServer, handler_class=S, port=8080):
+    logging.basicConfig(level=logging.INFO)
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    logging.info('Starting httpd...\n')
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    httpd.server_close()
+    logging.info('Stopping httpd...\n')
 
 if __name__ == '__main__':
     from sys import argv
