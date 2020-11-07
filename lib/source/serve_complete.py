@@ -183,7 +183,127 @@ def del_c(db,uid,nid):
         return False
 
 
+class S(BaseHTTPRequestHandler):
+    def do_HEAD(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
 
+    def do_GET(self):
+        paths = {
+            '/foo': {'status': 200},
+            '/bar': {'status': 302},
+            '/baz': {'status': 404},
+            '/qux': {'status': 500}
+        }
+
+        if self.path in paths:
+            self.respond(paths[self.path])
+        else:
+            self.respond({'status': 500})
+        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+
+        self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+        # try
+        # if(path)
+
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
+        post_data = self.rfile.read(content_length) # <--- Gets the data itself
+        logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+       
+           
+        print(self.headers['Content-Type'][:9])
+        if(self.headers['Content-Type'][:9]!='multipart'):
+            data = post_data.decode('utf-8')
+            data = eval(data)
+            print(data)
+
+            logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
+                str(self.path), str(self.headers), post_data.decode('utf-8'))
+            self.do_HEAD()
+
+            if(data["op"]=="sign_in"):
+                db = connectdb()
+                if(sign_in(db,data["user"],data["code"])):
+                    uid = str(get_UID(db,data["user"]))
+                    mesg =uid+' '+data["user"]
+                    self.wfile.write(mesg.format(self.path).encode('utf-8')) 
+                else:
+                    self.wfile.write("-1".format(self.path).encode('utf-8'))
+        
+            elif(data["op"]=="registe"):
+                db = connectdb()
+                uid=add_u(db,data["user"],data["code"])
+                if(uid!=-1):
+                    mesg =str(uid)+' '+data["user"]
+                    self.wfile.write(mesg.format(self.path).encode('utf-8')) 
+                else:
+                    self.wfile.write("-1".format(self.path).encode('utf-8'))
+
+            elif(data["op"]=="add_collection"):
+            
+                db = connectdb()
+                if(add_c(db,data["uid"],data["nid"])):
+                    self.wfile.write("1".format(self.path).encode('utf-8'))
+                else:
+                    self.wfile.write("-1".format(self.path).encode('utf-8'))
+                
+            elif(data["op"]=="get_collection"):
+                print("get_collection")
+                db = connectdb()
+                mesg = get_c(db,data["uid"])
+                self.wfile.write(mesg.format(self.path).encode('utf-8'))
+
+            elif(data["op"]=="delete_collection"):
+                db = connectdb()
+                if(del_c(db,data["uid"],data["nid"])):
+                    mesg = get_c(db,data["uid"])
+                    self.wfile.write(mesg.format(self.path).encode('utf-8'))
+                else:
+                    self.wfile.write("-1".format(self.path).encode('utf-8'))  
+
+            #adding
+            elif(data["op"]=="get_pic"):
+                send_pic(self)
+            elif(data["op"]=="get_pic_info"):
+                send_pic_info(self)
+
+        else:
+            post_data = post_data.decode('iso-8859-1')
+            n =int (post_data.find('stream'))
+            post_data=post_data[n+10:]
+            post_data= post_data.encode('iso-8859-1')
+            print(post_data)
+            fb = open("D:\\Master_S\\2020A_Software_E\\sever_sql\\3.png","wb")
+            fb.write(post_data)
+            fb.close
+            pic_shap()
+            i = str(match())
+
+            self.wfile.write(i.format(self.path).encode('utf-8'))
+
+
+        
+        
+            
+                
+       
+    def respond(self, opts):
+        response = self.handle_http(opts['status'], self.path)
+        self.wfile.write(response)
+
+    def handle_http(self, status_code, path):
+        self.send_response(status_code)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        content = '''
+           <html><head><title>Title goes here.</title></head>
+           <body><p>This is a test.</p>
+           <p>You accessed path: {}</p>
+           </body></html>
+           '''.format(path)
+        return bytes(content, 'UTF-8')
 
 def run(server_class=HTTPServer, handler_class=S, port=8080):
     logging.basicConfig(level=logging.INFO)
