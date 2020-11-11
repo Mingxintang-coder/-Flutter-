@@ -55,7 +55,40 @@ class _Registe extends State<Registe> {
     );
   }
 
-  
+  // ignore: non_constant_identifier_names
+  void _registe() {
+    print('waiting');
+    if (tc1.text.toString() == '') {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text('用户名不能为空'),
+              ));
+    } else if (tc2.text.toString() == '') {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text('密码不能为空'),
+              ));
+    } else {
+      getHttp(tc1.text.toString(), tc2.text.toString()).then((val) {
+        setState(() {
+          if (val != '-1') {
+            List l = val.split(' ');
+            user_info = UserInfo(id: l[0], account: l[1]);
+            Navigator.of(context)
+                .push(MaterialPageRoute(builder: (context) => Tabs()));
+          } else {
+            showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                      title: Text('erro'),
+                    ));
+          }
+        });
+      });
+    }
+  }
 
 
 }
